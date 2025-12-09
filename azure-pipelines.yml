@@ -81,19 +81,12 @@ stages:
         -environment=build
       displayName: 'Migrate to Build Environment'
 
-    # Test undo scripts by rolling back and re-migrating
+    # Test undo scripts by rolling back
     - script: |
         flyway undo ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
         -environment=build
       displayName: 'Test Undo Scripts (Rollback)'
-      continueOnError: true
-
-    - script: |
-        flyway migrate ^
-        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build
-      displayName: 'Re-Migrate After Undo Test'
       continueOnError: true
 
     # Publish migration scripts as artifact

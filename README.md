@@ -56,7 +56,7 @@ This project demonstrates a Flyway **Migrations-based workflow** using Azure Dev
 ### Stage 2: Build & Validate
 - Displays migration information
 - Cleans and migrates to build environment
-- Tests undo scripts (rollback and re-migrate)
+- Tests undo scripts (rollback)
 - Publishes migration scripts as artifact
 
 ### Stage 3: Pre-Deployment Report
