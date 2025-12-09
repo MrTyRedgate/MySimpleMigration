@@ -11,12 +11,9 @@ mixed = true
 outOfOrder = true
 schemaModelLocation = "schema-model"
 validateMigrationNaming = true
-baselineOnMigrate = true
-cleanDisabled = true
 
   [flyway.check]
   majorTolerance = 0
-  buildEnvironment = "build"
 
 [flyway.sqlserver.clean]
 mode = "all"
@@ -123,8 +120,6 @@ ignoreWithNoCheck = true
 
 [environments.build]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
-provisioner = "clean"
-cleanDisabled = false
 
 [environments.mydeploymenttarget]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_target;encrypt=false;integratedSecurity=true;trustServerCertificate=true"

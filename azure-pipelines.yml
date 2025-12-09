@@ -125,6 +125,7 @@ stages:
     - script: |
         flyway check -changes -drift -code -dryrun ^
         -environment="mydeploymenttarget" ^
+        -check.buildEnvironment="build" ^
         -reportFilename="reports\DeploymentReport-$(deploymentId).html" ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml"
       displayName: 'Generate Deployment Report (Changes, Drift, Code Analysis, Dry-Run)'
