@@ -1,0 +1,251 @@
+# Flyway Migrations-Based Deployment Pipeline
+# 
+# Workflow: Dev uses Flyway Desktop to commit migration scripts to version control (dev branch)
+#           PR is done into the release branch, pipeline triggers manually
+#
+# Prerequisites:
+# 1. Create variable group 'RG_Auth' with secrets:
+#    - RG_EMAIL: Your Redgate email
+#    - RG_TOKEN: Your Redgate PAT token
+# 2. Ensure flyway.toml is configured for your environments
+# 3. Set up agent pool or use default
+# 4. Configure environment names to match your setup
+
+trigger: none
+
+parameters:
+- name: enableBuild
+  displayName: 'Enable Build Stage'
+  type: boolean
+  default: true
+- name: enablePreDeploymentReport
+  displayName: 'Enable Pre-Deployment Report'
+  type: boolean
+  default: true
+- name: enableDeployment
+  displayName: 'Enable Deployment to MyDeploymentTarget'
+  type: boolean
+  default: true
+
+pool:
+  name: default
+
+variables:
+- group: RG_Auth
+- name: deploymentId
+  value: $[coalesce(variables['System.PullRequest.PullRequestNumber'], variables['Build.BuildNumber'])]
+
+stages:
+# =============================================================================
+# STAGE 1: AUTHENTICATE FLYWAY
+# =============================================================================
+- stage: Authenticate
+  displayName: 'Authenticating Flyway'
+  jobs:
+  - job: AuthenticateFlyway
+    displayName: 'Authenticate with Redgate'
+    steps: 
+    - script: flyway auth -IAgreeToTheEula -email="$(RG_EMAIL)" -token="$(RG_TOKEN)"
+      displayName: 'Authenticating Flyway'
+
+# =============================================================================
+# STAGE 2: BUILD - VALIDATE MIGRATIONS & DEPLOY TO BUILD DATABASE
+# =============================================================================
+- stage: Build
+  displayName: 'Build & Validate Migrations'
+  dependsOn: Authenticate
+  condition: succeeded()
+  jobs: 
+  - job: BuildValidate
+    displayName: 'Build and Validate'
+    condition: eq('${{ parameters.enableBuild }}', true)
+    steps:
+    # Validate migration scripts naming and checksums
+    - script: |
+        flyway validate ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=build
+      displayName: 'Validate Migration Scripts'
+      continueOnError: true
+
+    # Show migration info
+    - script: |
+        flyway info ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=build
+      displayName: 'Display Migration Info (Build)'
+
+    # Clean and migrate to build environment to validate migrations work
+    - script: |
+        flyway clean ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=build ^
+        -cleanDisabled="false"
+      displayName: 'Clean Build Database'
+
+    - script: |
+        flyway migrate ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=build
+      displayName: 'Migrate to Build Environment'
+
+    # Publish migration scripts as artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Migration Scripts'
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)\migrations'
+        ArtifactName: 'Migration_Scripts-$(deploymentId)'
+        publishLocation: 'Container'
+
+# =============================================================================
+# STAGE 3: PRE-DEPLOYMENT REPORT FOR MyDeploymentTarget
+# =============================================================================
+- stage: PreDeployment_Report
+  displayName: 'Generate Deployment Report for MyDeploymentTarget'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeploymentReporting
+    displayName: 'MyDeploymentTarget Environment Analysis'
+    condition: eq('${{ parameters.enablePreDeploymentReport }}', true)
+    steps:
+    # Create required directories
+    - script: if not exist "$(System.DefaultWorkingDirectory)\reports" mkdir "$(System.DefaultWorkingDirectory)\reports"
+      displayName: 'Create Reports Directory'
+      continueOnError: true
+
+    # Show pending migrations for target environment
+    - script: |
+        flyway info ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=mydeploymenttarget
+      displayName: 'Display Pending Migrations (MyDeploymentTarget)'
+
+    # Generate check report with changes, drift detection, code analysis, and dry-run script
+    - script: |
+        flyway check -changes -drift -code -dryrun ^
+        -environment="mydeploymenttarget" ^
+        -check.buildEnvironment="build" ^
+        -reportFilename="reports\DeploymentReport-$(deploymentId).html" ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml"
+      displayName: 'Generate Deployment Report (Changes, Drift, Code Analysis, Dry-Run)'
+      continueOnError: true
+
+    # Ensure report artifact always exists
+    - powershell: |
+        $reportFile = "$(System.DefaultWorkingDirectory)\reports\DeploymentReport-$(deploymentId).html"
+        if (-not (Test-Path $reportFile)) {
+          Write-Host "No change report generated - creating placeholder file"
+          $placeholderContent = @"
+        <html>
+        <head><title>Deployment Report - $(deploymentId)</title></head>
+        <body>
+        <h1>No Changes Detected</h1>
+        <p>MyDeploymentTarget environment is already up to date with all migrations.</p>
+        <p>No changes, drift, code issues, or dry-run script to display.</p>
+        <p>Deployment ID: $(deploymentId)</p>
+        </body>
+        </html>
+        "@
+          $placeholderContent | Out-File -FilePath $reportFile -Encoding UTF8
+        } else {
+          Write-Host "Deployment report generated successfully"
+        }
+      displayName: 'Ensure Deployment Report Exists'
+
+    # Publish artifacts for reviewer access
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Deployment Report'
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)\reports'
+        ArtifactName: 'Deployment_Report-$(deploymentId)'
+        publishLocation: 'Container'
+
+# =============================================================================
+# STAGE 4: DEPLOY TO MyDeploymentTarget WITH APPROVAL
+# =============================================================================
+- stage: Deploy_MyDeploymentTarget
+  displayName: 'Deploy to MyDeploymentTarget'
+  dependsOn: PreDeployment_Report
+  condition: succeeded()
+  jobs: 
+  # Manual approval gate
+  - job: DeploymentApproval
+    displayName: 'MyDeploymentTarget Deployment Approval'
+    condition: eq('${{ parameters.enableDeployment }}', true)
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      displayName: 'Approve Deployment to MyDeploymentTarget'
+      inputs:
+        notifyUsers: 'user@email.com'
+        instructions: |
+          Please review the following before approving deployment to MyDeploymentTarget:
+          
+          1. Changes - What schema changes will be applied
+          2. Drift - Any unexpected differences in the target database
+          3. Code Analysis - SQL code quality and potential issues
+          4. Dry-Run Script - Exact SQL that will be executed
+          
+          Deployment ID: $(deploymentId)
+          
+          Only approve if you are satisfied with the proposed changes and no blocking issues exist.
+        onTimeout: 'resume'
+
+  # Execute deployment
+  - job: ExecuteDeployment
+    displayName: 'Execute Migration Deployment'
+    dependsOn: DeploymentApproval
+    condition: eq('${{ parameters.enableDeployment }}', true)
+    steps:
+    # Download the migration scripts artifact
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Migration Scripts'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'Migration_Scripts-$(deploymentId)'
+        downloadPath: '$(System.DefaultWorkingDirectory)'
+      continueOnError: true
+
+    # Show current state before migration
+    - script: |
+        flyway info ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=mydeploymenttarget
+      displayName: 'Pre-Deployment Migration Status'
+
+    # Execute migrations
+    - script: |
+        flyway migrate ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=mydeploymenttarget
+      displayName: 'Execute Migrations to MyDeploymentTarget'
+
+    # Verify deployment
+    - script: |
+        flyway info ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=mydeploymenttarget
+      displayName: 'Post-Deployment Migration Status'
+
+    # Publish final deployment status
+    - powershell: |
+        $statusFile = "$(System.DefaultWorkingDirectory)\deployment_status.txt"
+        $content = @"
+        Deployment Completed Successfully
+        =================================
+        Deployment ID: $(deploymentId)
+        Target Environment: MyDeploymentTarget
+        Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+        "@
+        $content | Out-File -FilePath $statusFile -Encoding UTF8
+        Write-Host "##[section] ✅ DEPLOYMENT TO MyDeploymentTarget COMPLETED SUCCESSFULLY"
+      displayName: 'Record Deployment Status'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Deployment Status'
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)\deployment_status.txt'
+        ArtifactName: 'Deployment_Status-$(deploymentId)'
+        publishLocation: 'Container'

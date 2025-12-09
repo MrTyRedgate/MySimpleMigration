@@ -1,0 +1,84 @@
+# Flyway Configuration for Migrations-Based Workflow
+# 
+# This project uses versioned migration scripts (V1__*, V2__*, etc.)
+# Migration scripts are created in Flyway Desktop and committed to version control
+
+databaseType = "SqlServer"
+id = "migration-project-id"
+name = "MySimpleMigration"
+
+[flyway]
+defaultSchema = "dbo"
+locations = [ "filesystem:migrations" ]
+mixed = true
+outOfOrder = false
+validateMigrationNaming = true
+cleanDisabled = true
+
+[flyway.check]
+majorTolerance = 0
+minorTolerance = 0
+
+[flyway.sqlserver.clean]
+mode = "all"
+
+[flywayDesktop]
+developmentEnvironment = "development"
+shadowEnvironment = "shadow"
+
+# =============================================================================
+# ENVIRONMENTS
+# =============================================================================
+
+# Development environment - used by developers with Flyway Desktop
+[environments.development]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_dev;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+
+# Shadow database - used by Flyway Desktop to generate migration scripts
+[environments.shadow]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_shadow;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+
+# Build environment - used in CI/CD to validate migrations
+[environments.build]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+
+# MyDeploymentTarget environment - the deployment target
+[environments.mydeploymenttarget]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_target;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+
+# =============================================================================
+# REDGATE COMPARE OPTIONS
+# =============================================================================
+
+[redgateCompare]
+filterFile = "filter.rgf"
+
+[redgateCompare.sqlserver]
+filterFile = "Filter.scpf"
+
+[redgateCompare.sqlserver.options.behavior]
+addCreateOrAlterForRerunnableScripts = false
+addObjectExistenceChecks = false
+includeDependencies = true
+includeRoleExistenceChecks = true
+includeSchemaExistenceChecks = true
+useCaseSensitiveObjectDefinition = false
+
+[redgateCompare.sqlserver.options.ignores]
+ignoreCollations = true
+ignoreComments = false
+ignoreDataCompression = true
+ignoreDatabaseAndServerNameInSynonyms = true
+ignoreFileGroupsPartitionSchemesAndPartitionFunctions = true
+ignoreFillFactorAndIndexPadding = true
+ignoreIdentitySeedAndIncrementValues = false
+ignoreNotForReplication = true
+ignorePermissions = false
+ignoreReplicationTriggers = true
+ignoreStatistics = true
+ignoreTsqltFrameworkAndTests = true
+ignoreUserProperties = true
+ignoreUsersPermissionsAndRoleMemberships = true
+ignoreWhiteSpace = true
+ignoreWithElementOrder = true
+ignoreWithNoCheck = true

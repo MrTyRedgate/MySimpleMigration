@@ -1,0 +1,15 @@
+# Flyway user-specific files
+flyway.user.toml
+
+# Build outputs
+reports/
+
+# IDE files
+.vs/
+.vscode/
+*.suo
+*.user
+
+# Temp files
+*.tmp
+*.log
