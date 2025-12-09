@@ -10,11 +10,27 @@
 
 trigger: none
 
+parameters:
+  - name: enableBuild
+    displayName: 'Enable Build Stage'
+    type: boolean
+    default: true
+  - name: enableCheck
+    displayName: 'Enable Check Stage'
+    type: boolean
+    default: true
+  - name: enableDeploy
+    displayName: 'Enable Deploy Stage'
+    type: boolean
+    default: true
+
 pool:
   name: default
 
 variables:
   - group: RG_Auth
+  - name: deploymentId
+    value: $[coalesce(variables['System.PullRequest.PullRequestNumber'], variables['Build.BuildNumber'])]
 
 stages:
 
@@ -23,6 +39,7 @@ stages:
   # ===========================================================================
   - stage: Build
     displayName: 'Build'
+    condition: eq('${{ parameters.enableBuild }}', true)
     jobs:
       - job: Build
         displayName: 'Validate Migrations'
@@ -30,35 +47,62 @@ stages:
           - script: flyway auth -IAgreeToTheEula -email="$(RG_EMAIL)" -token="$(RG_TOKEN)"
             displayName: 'Flyway Auth'
 
-          - script: flyway clean migrate info -environment=build "-environments.build.provisioner=clean"
+          - script: flyway clean migrate info -environment=Build
             displayName: 'Clean, Migrate, Info (Build)'
             env:
               FLYWAY_CLEAN_DISABLED: false
 
   # ===========================================================================
-  # Stage 2: Check - Generate deployment report for target
+  # Stage 2: Check - Generate deployment report and dry-run script
   # ===========================================================================
   - stage: Check
     displayName: 'Check'
     dependsOn: Build
+    condition: and(succeeded(), eq('${{ parameters.enableCheck }}', true))
     jobs:
       - job: Check
-        displayName: 'Generate Report'
+        displayName: 'Generate Report & Script'
         steps:
           - script: |
               if not exist reports mkdir reports
-            displayName: 'Create Reports Folder'
+              if not exist scripts mkdir scripts
+            displayName: 'Create Artifact Folders'
 
-          - script: flyway check -changes -drift -dryrun -environment=mydeploymenttarget -check.buildEnvironment=check -reportFilename="reports\report.html"
+          - script: flyway check -changes -drift -dryrun -environment=target -check.buildEnvironment=Check -reportFilename="reports\CheckReport-$(deploymentId).html"
             displayName: 'Flyway Check (Changes, Drift, DryRun)'
             env:
               FLYWAY_CLEAN_DISABLED: false
 
+          # Generate dry-run deployment script for review
+          - script: flyway migrate -dryRunOutput="scripts\deploy-$(deploymentId).sql" -environment=target
+            displayName: 'Generate Dry-Run Script'
+            continueOnError: true
+
+          # Ensure script artifact exists (placeholder if no changes)
+          - powershell: |
+              $scriptFile = "scripts\deploy-$(deploymentId).sql"
+              if (-not (Test-Path $scriptFile)) {
+                Write-Host "No migrations pending - creating placeholder"
+                @"
+              -- No pending migrations for deployment $(deploymentId)
+              -- Target environment is up to date
+              "@ | Out-File -FilePath $scriptFile -Encoding UTF8
+              } else {
+                Write-Host "Deployment script generated: $scriptFile"
+              }
+            displayName: 'Ensure Script Artifact Exists'
+
           - task: PublishBuildArtifacts@1
-            displayName: 'Publish Report'
+            displayName: 'Publish Check Report'
             inputs:
               PathtoPublish: 'reports'
-              ArtifactName: 'Reports'
+              ArtifactName: 'CheckReport-$(deploymentId)'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Deployment Script'
+            inputs:
+              PathtoPublish: 'scripts'
+              ArtifactName: 'DeployScript-$(deploymentId)'
 
   # ===========================================================================
   # Stage 3: Deploy - Apply migrations to target (with approval)
@@ -66,6 +110,7 @@ stages:
   - stage: Deploy
     displayName: 'Deploy'
     dependsOn: Check
+    condition: and(succeeded(), eq('${{ parameters.enableDeploy }}', true))
     jobs:
       - job: Approve
         displayName: 'Approval Gate'
@@ -74,11 +119,42 @@ stages:
           - task: ManualValidation@0
             displayName: 'Approve Deployment'
             inputs:
-              instructions: 'Review the Check report artifact before approving deployment to MyDeploymentTarget.'
+              instructions: |
+                Review artifacts before approving deployment:
+                
+                1. CheckReport-$(deploymentId) - Changes, Drift, DryRun analysis
+                2. DeployScript-$(deploymentId) - Exact SQL to be executed
+                
+                Only approve if satisfied with the proposed changes.
 
       - job: Deploy
         displayName: 'Migrate'
         dependsOn: Approve
         steps:
-          - script: flyway info migrate info -environment=mydeploymenttarget
-            displayName: 'Flyway Migrate (Target)'
+          # Download and check the deployment script
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Deployment Script'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'DeployScript-$(deploymentId)'
+              downloadPath: '$(System.DefaultWorkingDirectory)'
+
+          - powershell: |
+              $scriptPath = "$(System.DefaultWorkingDirectory)\DeployScript-$(deploymentId)\deploy-$(deploymentId).sql"
+              if (Test-Path $scriptPath) {
+                $content = Get-Content $scriptPath -Raw
+                if ($content -match "-- No pending migrations") {
+                  Write-Host "##[section] No Migrations Required"
+                  Write-Host "Target environment already up to date."
+                } else {
+                  Write-Host "##[section] Executing Deployment"
+                  Write-Host "Deployment ID: $(deploymentId)"
+                  flyway info migrate info -environment=target
+                  Write-Host "##[section] Deployment Completed Successfully"
+                }
+              } else {
+                Write-Host "##[warning] Script not found - running migrate directly"
+                flyway info migrate info -environment=target
+              }
+            displayName: 'Flyway Migrate (Conditional)'

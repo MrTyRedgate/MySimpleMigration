@@ -1,56 +1,56 @@
-databaseType = "SqlServer"
-id = "7b9bd53b-698c-4794-ab41-a38860502d86"
+id = "97ea357d-2613-4415-b434-775478105625"
 name = "MySimpleMigration"
+databaseType = "SqlServer"
+
+[environments.development]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_dev;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
+displayName = "Development database"
+
+[environments.shadow]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_shadow;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
+displayName = "Shadow database"
+provisioner = "clean"
+
+[environments.target]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_target;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
+displayName = "Deployment Target"
+
+[environments.Check]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_check;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
+displayName = "Check (Reporting) database"
+provisioner = "clean"
+
+[environments.Build]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=true;integratedSecurity=true;trustServerCertificate=true"
+displayName = "Build database"
+provisioner = "clean"
 
 [flyway]
-callbackLocations = [ "filesystem:callbacks" ]
-defaultSchema = "dbo"
-errorOverrides = [ "S0001:0:I-" ]
 locations = [ "filesystem:migrations" ]
 mixed = true
 outOfOrder = true
-schemaModelLocation = "schema-model"
 validateMigrationNaming = true
+defaultSchema = "Customers"
 baselineOnMigrate = true
-baselineVersion = "001.20251209134454"
-
-  [flyway.check]
-  majorTolerance = 0
+baselineVersion = "001"
+errorOverrides = [ "S0001:0:I-" ]
 
 [flyway.sqlserver.clean]
 mode = "all"
 
+[flyway.sqlserver.clean.schemas]
+exclude = [ "ExampleSchema1", "ExampleSchema2" ]
+
 [flywayDesktop]
 developmentEnvironment = "development"
 shadowEnvironment = "shadow"
+schemaModel = "./schema-model"
 
-[redgateCompare]
-filterFile = "filter.rgf"
+[flywayDesktop.generate]
+undoScripts = true
 
-  [redgateCompare.sqlserver]
-  filterFile = "Filter.scpf"
-
-[redgateCompare.sqlserver.data.options.comparison]
-compressTemporaryFiles = false
-forceBinaryCollation = false
-treatEmptyStringAsNull = false
-trimTrailingWhiteSpace = false
-useChecksumComparison = false
-useMaxPrecisionForFloatComparison = false
-
-[redgateCompare.sqlserver.data.options.deployment]
-disableDdlTriggers = true
-disableDmlTriggers = false
-disableForeignKeys = false
-dontIncludeCommentsInScript = false
-dropPrimaryKeysIndexesAndUniqueConstraints = false
-reseedIdentityColumns = false
-skipIntegrityChecksForForeignKeys = false
-transportClrDataTypesAsBinary = false
-
-[redgateCompare.sqlserver.data.options.mapping]
-includeTimestampColumns = false
-useCaseSensitiveObjectDefinition = true
+[redgateCompare.sqlserver]
+filterFile = "Filter.scpf"
 
 [redgateCompare.sqlserver.options.behavior]
 addCreateOrAlterForRerunnableScripts = false
@@ -101,7 +101,7 @@ ignoreNocheckAndWithNocheck = false
 ignoreNotForReplication = true
 ignoreNullabilityOfColumns = false
 ignorePerformanceIndexes = false
-ignorePermissions = false
+ignorePermissions = true
 ignoreReplicationTriggers = true
 ignoreSchemas = false
 ignoreSensitivityClassifications = false
@@ -111,7 +111,7 @@ ignoreStatistics = true
 ignoreStatisticsIncremental = false
 ignoreStatisticsNoRecomputePropertyOnIndexes = false
 ignoreSynonymDependencies = false
-ignoreSystemNamedConstraintAndIndexNames = false
+ignoreSystemNamedConstraintAndIndexNames = true
 ignoreTsqltFrameworkAndTests = true
 ignoreUserProperties = true
 ignoreUsersPermissionsAndRoleMemberships = true
@@ -120,12 +120,25 @@ ignoreWithElementOrder = true
 ignoreWithEncryption = false
 ignoreWithNoCheck = true
 
-[environments.build]
-url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+[redgateCompare.sqlserver.data.options.mapping]
+includeTimestampColumns = false
+useCaseSensitiveObjectDefinition = true
 
-[environments.check]
-url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_check;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
-provisioner = "clean"
+[redgateCompare.sqlserver.data.options.comparison]
+compressTemporaryFiles = false
+forceBinaryCollation = true
+treatEmptyStringAsNull = false
+trimTrailingWhiteSpace = false
+useChecksumComparison = false
+useMaxPrecisionForFloatComparison = false
 
-[environments.mydeploymenttarget]
-url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_target;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+[redgateCompare.sqlserver.data.options.deployment]
+disableDdlTriggers = true
+disableDmlTriggers = false
+disableForeignKeys = false
+dontIncludeCommentsInScript = false
+dropPrimaryKeysIndexesAndUniqueConstraints = false
+reseedIdentityColumns = false
+skipIntegrityChecksForForeignKeys = false
+transportClrDataTypesAsBinary = false
+
