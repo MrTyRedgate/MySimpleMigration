@@ -12,6 +12,7 @@ outOfOrder = true
 schemaModelLocation = "schema-model"
 validateMigrationNaming = true
 baselineOnMigrate = true
+baselineVersion = "001.20251209134454"
 
   [flyway.check]
   majorTolerance = 0
