@@ -157,16 +157,26 @@ stages:
       inputs:
         notifyUsers: 'user@email.com'
         instructions: |
-          Please review the following before approving deployment to MyDeploymentTarget:
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║         🚀 DEPLOYMENT APPROVAL REQUIRED 🚀                       ║
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║  Target Environment: MyDeploymentTarget                          ║
+          ║  Deployment ID: $(deploymentId)                                  ║
+          ╚══════════════════════════════════════════════════════════════════╝
           
-          1. Changes - What schema changes will be applied
-          2. Drift - Any unexpected differences in the target database
-          3. Code Analysis - SQL code quality and potential issues
-          4. Dry-Run Script - Exact SQL that will be executed
+          📋 REVIEW CHECKLIST:
+          ────────────────────────────────────────────────────────────────────
+          ✅ 1. Changes      - Schema changes to be applied
+          ✅ 2. Drift        - Unexpected differences in target database  
+          ✅ 3. Code Analysis - SQL code quality and potential issues
+          ✅ 4. Dry-Run      - Exact SQL script that will be executed
           
-          Deployment ID: $(deploymentId)
+          ⚠️  ACTION REQUIRED:
+          ────────────────────────────────────────────────────────────────────
+          Only approve if you are satisfied with the proposed changes
+          and no blocking issues exist in the deployment report.
           
-          Only approve if you are satisfied with the proposed changes and no blocking issues exist.
+          📄 Review the Deployment Report artifact before approving.
         onTimeout: 'resume'
 
   # Execute deployment
