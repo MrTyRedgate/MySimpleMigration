@@ -123,5 +123,9 @@ ignoreWithNoCheck = true
 [environments.build]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
 
+[environments.check]
+url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_check;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+provisioner = "clean"
+
 [environments.mydeploymenttarget]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_target;encrypt=false;integratedSecurity=true;trustServerCertificate=true"

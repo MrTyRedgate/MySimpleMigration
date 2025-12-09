@@ -19,10 +19,19 @@ BEGIN
 	PRINT 'MySimpleMigration_target Database Dropped'
 END;
 
+IF DB_ID('MySimpleMigration_check') IS NOT NULL
+BEGIN
+	USE MASTER
+    ALTER DATABASE MySimpleMigration_check SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE MySimpleMigration_check;
+	PRINT 'MySimpleMigration_check Database Dropped'
+END;
+
 -- Ensure each database exists, creating them if needed
 IF DB_ID('MySimpleMigration_dev') IS NULL CREATE DATABASE MySimpleMigration_dev PRINT 'MySimpleMigration_dev Database Created';
 IF DB_ID('MySimpleMigration_shadow') IS NULL CREATE DATABASE MySimpleMigration_shadow PRINT 'MySimpleMigration_shadow Database Created';
 IF DB_ID('MySimpleMigration_build') IS NULL CREATE DATABASE MySimpleMigration_build PRINT 'MySimpleMigration_build Database Created';
+IF DB_ID('MySimpleMigration_check') IS NULL CREATE DATABASE MySimpleMigration_check PRINT 'MySimpleMigration_check Database Created';
 IF DB_ID('MySimpleMigration_target') IS NULL CREATE DATABASE MySimpleMigration_target PRINT 'MySimpleMigration_target Database Created';
 GO
 
