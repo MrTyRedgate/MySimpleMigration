@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<commandlinereference version="1.0" xmlns="http://www.red-gate.com/filtered_lists/1.0">
-  <filter-definition>
-    <filter-element enabled="true" name="Exclude system objects" pattern="@SQLCMD_DATABASE_NAME" />
-    <filter-element enabled="true" name="Exclude users" pattern="dbo" type="User" />
-    <filter-element enabled="true" name="Exclude schemas" pattern="sys" type="Schema" />
-    <filter-element enabled="true" name="Exclude schemas" pattern="INFORMATION_SCHEMA" type="Schema" />
-  </filter-definition>
-</commandlinereference>
+<NamedFilter version="1" type="SQLCompareFilter">
+  <FilterName>Default Filter</FilterName>
+  <Filter version="1">
+    <FilterElement enabled="true" name="Exclude system objects" pattern="@SQLCMD_DATABASE_NAME" />
+    <FilterElement enabled="true" name="Exclude users" pattern="dbo" matchType="User" />
+    <FilterElement enabled="true" name="Exclude schemas" pattern="sys" matchType="Schema" />
+    <FilterElement enabled="true" name="Exclude schemas" pattern="INFORMATION_SCHEMA" matchType="Schema" />
+  </Filter>
+</NamedFilter>
