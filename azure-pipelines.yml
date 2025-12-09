@@ -60,15 +60,7 @@ stages:
     displayName: 'Build and Validate'
     condition: eq('${{ parameters.enableBuild }}', true)
     steps:
-    # Validate migration scripts naming and checksums
-    - script: |
-        flyway validate ^
-        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build
-      displayName: 'Validate Migration Scripts'
-      continueOnError: true
-
-    # Show migration info
+    # Show migration info before clean
     - script: |
         flyway info ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
@@ -88,6 +80,13 @@ stages:
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
         -environment=build
       displayName: 'Migrate to Build Environment'
+
+    # Validate migration scripts after migrate (checksums, naming, applied state)
+    - script: |
+        flyway validate ^
+        -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
+        -environment=build
+      displayName: 'Validate Migration Scripts'
 
     # Test undo scripts by rolling back and re-migrating
     - script: |
