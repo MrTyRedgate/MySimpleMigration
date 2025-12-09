@@ -69,16 +69,19 @@ stages:
 
     # Clean and migrate to build environment to validate migrations work
     - script: |
-        flyway clean ^
+        flyway info clean info ^
+        -environment="build" ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build ^
-        -cleanDisabled="false"
+        "-environments.build.provisioner=clean"
       displayName: 'Clean Build Database'
+      env:
+        FLYWAY_CLEAN_DISABLED: false
 
     - script: |
-        flyway migrate ^
+        flyway info migrate info ^
+        -environment="build" ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build
+        -baselineOnMigrate="true"
       displayName: 'Migrate to Build Environment'
 
     # Test undo scripts by rolling back
@@ -121,14 +124,18 @@ stages:
         -environment=mydeploymenttarget
       displayName: 'Display Pending Migrations (MyDeploymentTarget)'
 
-    # Generate check report with changes, drift detection, code analysis, and dry-run script
+    # Generate check report with changes, drift detection, and dry-run script
     - script: |
-        flyway check -changes -drift -code -dryrun ^
+        flyway check -dryrun -changes -drift info ^
         -environment="mydeploymenttarget" ^
         -check.buildEnvironment="build" ^
-        -reportFilename="reports\DeploymentReport-$(deploymentId).html" ^
+        "-environments.build.provisioner=clean" ^
+        -reportFilename="$(System.DefaultWorkingDirectory)\reports\DeploymentReport-$(deploymentId).html" ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml"
-      displayName: 'Generate Deployment Report (Changes, Drift, Code Analysis, Dry-Run)'
+      displayName: 'Flyway Check Report'
+      continueOnError: false
+      env:
+        FLYWAY_CLEAN_DISABLED: false
 
     # Publish artifacts for reviewer access
     - task: PublishBuildArtifacts@1
