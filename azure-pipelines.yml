@@ -58,7 +58,7 @@ stages:
   jobs: 
   - job: BuildValidate
     displayName: 'Build and Validate'
-    condition: eq('${{ parameters.enableBuild }}', true)
+    condition: and(succeeded(), eq('${{ parameters.enableBuild }}', true))
     steps:
     # Show migration info before clean
     - script: |
@@ -107,7 +107,7 @@ stages:
   jobs:
   - job: DeploymentReporting
     displayName: 'MyDeploymentTarget Environment Analysis'
-    condition: eq('${{ parameters.enablePreDeploymentReport }}', true)
+    condition: and(succeeded(), eq('${{ parameters.enablePreDeploymentReport }}', true))
     steps:
     # Create required directories
     - script: if not exist "$(System.DefaultWorkingDirectory)\reports" mkdir "$(System.DefaultWorkingDirectory)\reports"
@@ -149,7 +149,7 @@ stages:
   # Manual approval gate
   - job: DeploymentApproval
     displayName: 'MyDeploymentTarget Deployment Approval'
-    condition: eq('${{ parameters.enableDeployment }}', true)
+    condition: and(succeeded(), eq('${{ parameters.enableDeployment }}', true))
     pool: server
     steps:
     - task: ManualValidation@0
