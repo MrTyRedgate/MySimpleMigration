@@ -42,6 +42,7 @@ url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_shadow;encrypt=
 # Build environment - used in CI/CD to validate migrations
 [environments.build]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
+provisioner = "clean"
 
 # MyDeploymentTarget environment - the deployment target
 [environments.mydeploymenttarget]
