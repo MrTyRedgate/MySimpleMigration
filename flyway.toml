@@ -19,9 +19,10 @@ baselineOnMigrate = true
 [flyway.check]
 majorTolerance = 0
 minorTolerance = 0
+buildEnvironment = "build"
 
-[flyway.sqlserver.clean]
-mode = "all"
+[flyway.plugins.clean]
+mode = "ALL"
 
 [flywayDesktop]
 developmentEnvironment = "development"
@@ -39,14 +40,11 @@ url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_dev;encrypt=fal
 [environments.shadow]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_shadow;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
 
-# Build environment - used in CI/CD to validate migrations
+# Build environment - used in CI/CD to validate migrations and for check command
 [environments.build]
 url = "jdbc:sqlserver://localhost;databaseName=MySimpleMigration_build;encrypt=false;integratedSecurity=true;trustServerCertificate=true"
 provisioner = "clean"
 cleanDisabled = false
-
-[environments.build.flyway.sqlserver.clean]
-mode = "all"
 
 # MyDeploymentTarget environment - the deployment target
 [environments.mydeploymenttarget]
