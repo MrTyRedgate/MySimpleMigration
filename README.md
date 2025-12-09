@@ -54,7 +54,6 @@ This project demonstrates a Flyway **Migrations-based workflow** using Azure Dev
 - Authenticates with Redgate using email and PAT token
 
 ### Stage 2: Build & Validate
-- Validates migration script naming conventions
 - Displays migration information
 - Cleans and migrates to build environment
 - Tests undo scripts (rollback and re-migrate)
@@ -100,7 +99,6 @@ Update `pool: name: default` in `azure-pipelines.yml` if using a different agent
 | Verb | Purpose |
 |------|---------|
 | `flyway auth` | Authenticate with Redgate licensing |
-| `flyway validate` | Validate migration scripts |
 | `flyway info` | Display migration status |
 | `flyway clean` | Reset database to empty state |
 | `flyway migrate` | Apply pending migrations |
