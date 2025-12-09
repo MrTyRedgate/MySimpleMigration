@@ -14,6 +14,7 @@ mixed = true
 outOfOrder = false
 validateMigrationNaming = true
 cleanDisabled = true
+baselineOnMigrate = true
 
 [flyway.check]
 majorTolerance = 0
