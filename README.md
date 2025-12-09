@@ -57,6 +57,7 @@ This project demonstrates a Flyway **Migrations-based workflow** using Azure Dev
 - Validates migration script naming conventions
 - Displays migration information
 - Cleans and migrates to build environment
+- Tests undo scripts (rollback and re-migrate)
 - Publishes migration scripts as artifact
 
 ### Stage 3: Pre-Deployment Report
@@ -103,6 +104,7 @@ Update `pool: name: default` in `azure-pipelines.yml` if using a different agent
 | `flyway info` | Display migration status |
 | `flyway clean` | Reset database to empty state |
 | `flyway migrate` | Apply pending migrations |
+| `flyway undo` | Rollback the most recent migration |
 | `flyway check -changes` | Detect schema changes to be applied |
 | `flyway check -drift` | Detect unexpected changes in target database |
 | `flyway check -code` | Static code analysis for SQL quality issues |
@@ -116,8 +118,7 @@ MySimpleMigration/
 ├── flyway.toml            # Flyway configuration
 ├── flyway.user.toml       # User-specific settings (git-ignored)
 ├── Filter.scpf            # SQL Compare filter file
-├── migrations/            # Versioned migration scripts
-│   └── V001__Initial_Setup.sql
+├── migrations/            # Versioned migration scripts (V*__.sql, U*__.sql)
 └── README.md              # This file
 ```
 
