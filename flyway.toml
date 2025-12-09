@@ -11,6 +11,7 @@ mixed = true
 outOfOrder = true
 schemaModelLocation = "schema-model"
 validateMigrationNaming = true
+baselineOnMigrate = true
 
   [flyway.check]
   majorTolerance = 0
