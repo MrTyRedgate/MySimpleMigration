@@ -78,16 +78,14 @@ stages:
     - script: |
         flyway migrate ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build ^
-        -cleanDisabled="false"
+        -environment=build
       displayName: 'Migrate to Build Environment'
 
     # Test undo scripts by rolling back
     - script: |
         flyway undo ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml" ^
-        -environment=build ^
-        -cleanDisabled="false"
+        -environment=build
       displayName: 'Test Undo Scripts (Rollback)'
       continueOnError: true
 
