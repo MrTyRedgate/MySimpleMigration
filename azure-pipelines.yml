@@ -173,7 +173,7 @@ stages:
   - job: ExecuteDeployment
     displayName: 'Execute Migration Deployment'
     dependsOn: DeploymentApproval
-    condition: eq('${{ parameters.enableDeployment }}', true)
+    condition: and(succeeded(), eq('${{ parameters.enableDeployment }}', true))
     steps:
     # Download the migration scripts artifact
     - task: DownloadBuildArtifacts@0
