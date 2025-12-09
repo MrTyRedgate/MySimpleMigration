@@ -129,29 +129,6 @@ stages:
         -reportFilename="reports\DeploymentReport-$(deploymentId).html" ^
         -configFiles="$(System.DefaultWorkingDirectory)\flyway.toml"
       displayName: 'Generate Deployment Report (Changes, Drift, Code Analysis, Dry-Run)'
-      continueOnError: true
-
-    # Ensure report artifact always exists
-    - powershell: |
-        $reportFile = "$(System.DefaultWorkingDirectory)\reports\DeploymentReport-$(deploymentId).html"
-        if (-not (Test-Path $reportFile)) {
-          Write-Host "No change report generated - creating placeholder file"
-          $placeholderContent = @"
-        <html>
-        <head><title>Deployment Report - $(deploymentId)</title></head>
-        <body>
-        <h1>No Changes Detected</h1>
-        <p>MyDeploymentTarget environment is already up to date with all migrations.</p>
-        <p>No changes, drift, code issues, or dry-run script to display.</p>
-        <p>Deployment ID: $(deploymentId)</p>
-        </body>
-        </html>
-        "@
-          $placeholderContent | Out-File -FilePath $reportFile -Encoding UTF8
-        } else {
-          Write-Host "Deployment report generated successfully"
-        }
-      displayName: 'Ensure Deployment Report Exists'
 
     # Publish artifacts for reviewer access
     - task: PublishBuildArtifacts@1
