@@ -1,6 +1,6 @@
 # MySimpleMigration
 
-A simplified Flyway **Migrations-based Pipeline** for Azure DevOps. Based on the Flyway AutoPilot FastTrack project by Redgate.
+A simplified Flyway **Migrations-based Pipeline** for Azure DevOps.
 
 > **Version 1.0** - First working version  
 > Use at your own risk, no support provided. Please use in a sandbox environment.
