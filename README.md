@@ -47,7 +47,7 @@ This project demonstrates a streamlined Flyway migrations workflow with a **3-st
 ### 1. Create Databases
 Run `scripts/CreateMySimpleMigrationDatabases.sql` in SQL Server Management Studio.
 
-> **Note:** The create script is written for **MS SQL Server**. However, the pipeline itself will work with any database that Flyway has advanced support for (PostgreSQL, Oracle, MySQL, etc.) - just update the `flyway.toml` connection strings and create equivalent databases for your DBMS.
+> **Note:** The create script is written for **MS SQL Server**. However, the pipeline itself should still work with any database that Flyway has advanced support for (PostgreSQL, Oracle, MySQL, etc.) - just update the `flyway.toml` connection strings and create equivalent databases for your DBMS.
 
 This script is **idempotent** - it can be run multiple times safely:
 - Drops and recreates `_dev` and `_target` (fresh start)
